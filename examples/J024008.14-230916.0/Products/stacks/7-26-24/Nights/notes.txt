@@ -1,0 +1,48 @@
+This is the first iteration of stacking.
+
+Format # Night:
+[Velocity (km/s), Unweighted Flux (Jy/Beam), Weighted Flux (Jy/Beam), Curve Fit (Jy/Beam)]
+
+Format RMS Curve:
+[# of RRLs, Unweighted RMS Stack (Jy/Beam), Weighted RMS Stack (Jy/Beam), Curve fit (Jy/Beam)]
+ 
+* Recommend to do a 1/sqrt(N) fit factored by the median RMS
+
+How these were stacked:
+  - No spectra were discarded based off of the rms curve
+  - Discard criteria during processing
+	* All edge cases that were ~+50 cut off were discarded (very conservative)
+	* Any absorption lines in case it was RFI absorption that could meddle with the data
+	* Any p values <0.05 since as a way to determine whether any spikes made the data non 
+	  gaussian mathematically deemed non-gaussian
+  - Are weighted by 1/sqrt(rms)
+  - Baseline fitting was done with a polynomial fit
+
+Summaries (weighted)
+Night 1:
+No RFI absorption at -150
+
+Night 2:
+No RFI absorption at -150
+
+Night 3:
+No RFI absorption at -150
+2.5sig ~7 chan wide absorption feature 200?
+
+Night 4:
+Similar 2.5sig absorption feature at -150
+Also similar  2.5 sig absorption feature at -650
+
+Night 5:
+One insignificant ~2.5 spike at 225
+One ~3sig spike at -650
+
+Night 6:
+Single channel 2.5sig single channel absorption
+
+Conclusion: 
+Looking back, individual nights have a slight absorption
+bias at -150 which must have come through in the complete stack
+In the final stack, the dip between the two gaussian curves are at the ~ -150 km/s 
+channel 
+It is confirmed that one of the peaks is at 3sig and the other at ~2.25
