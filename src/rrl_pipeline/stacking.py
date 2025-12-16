@@ -2,13 +2,13 @@ import numpy as np
 from scipy.interpolate import interp1d
 from utils import center_mask
 
-def stack_rrls(rrl_list, rrl_window_size=2000, rrl_mask_width=100, weighted = False, weights=None):
+def stack_rrls(rrl_list, rrl_window_size=1000, rrl_mask_width=100, weighted = False, weights=None):
     """
     Stacks a set of rrl spectra. Uses velocity space for interpolation
 
     Return the stacked spectrum.
     """
-    chan_size = np.max(np.abs(np.diff(spec[:,1]))) # figure it out
+    chan_size = np.max(np.abs(np.diff(rrl_list[:,:,0])))
     interp_chan = np.arange(-rrl_window_size/2., rrl_window_size/2., chan_size)
     stack_flx = np.zeros(len(flux_interp), weighted)
     signal_stacks = []
@@ -25,7 +25,7 @@ def stack_rrls(rrl_list, rrl_window_size=2000, rrl_mask_width=100, weighted = Fa
             flux_interp *= weights[idx]
             divisor = np.sum(weights)
         else:
-            divisor = len(weights) # figure it out
+            divisor = len(weights)
         
         stack_flx += flux_interp
         rms_curve.append(np.std(stack_flx[mask]))
