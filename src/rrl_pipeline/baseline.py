@@ -30,11 +30,12 @@ def subtract_baseline(window, rrl_mask_width = 100 * u.km/u.s, order = 1):
 
 def minimize_order_baseline(rrl_window, rrl_mask_width = 100 * u.km/u.s, max_order = 1):
 	print("Processing RRL#", rrl_window.meta["RRL Number"])
-	min_residuals = []
-	min_rchi = 1000
-	min_order = max_order
+	residuals0 = subtract_baseline(rrl_window, rrl_mask_width, 0)
+	min_residuals = residuals0
+	min_rchi = rchi(residuals0, 0)
+	min_order = 0
 
-	for order in range(max_order+1):
+	for order in range(1, max_order+1):
 		residuals = subtract_baseline(rrl_window, rrl_mask_width, order)
 		rchi_i = rchi(residuals, order)
 		print("Temp Residual", residuals)
@@ -43,7 +44,7 @@ def minimize_order_baseline(rrl_window, rrl_mask_width = 100 * u.km/u.s, max_ord
 			min_order = order
 			min_rchi = rchi_i
 	
-	if min_residuals == []:
+	if min_residuals is None:
 		min_residuals = residuals.copy()
 
 	print("Rchi minimized to:", min_rchi)
