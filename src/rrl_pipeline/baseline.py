@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial
-from rrl_pipeline.utils import center_mask, rchi
+from rrl_pipeline.utils import center_mask, rchi2
 from rrlpy import freq as frequency
 from astropy import units as u
 from astropy import table
@@ -32,12 +32,12 @@ def minimize_order_baseline(rrl_window, rrl_mask_width = 100 * u.km/u.s, max_ord
 	print("Processing RRL n =", rrl_window.meta["RRL Number"])
 	residuals0 = subtract_baseline(rrl_window, rrl_mask_width, 0)
 	min_residuals = residuals0
-	min_rchi = rchi(residuals0, 0)
+	min_rchi = rchi2(residuals0, 0)
 	min_order = 0
 
 	for order in range(1, max_order+1):
 		residuals = subtract_baseline(rrl_window, rrl_mask_width, order)
-		rchi_i = rchi(residuals, order)
+		rchi_i = rchi2(residuals, order)
 		
 		if abs(1 - min_rchi) > abs(1 - rchi_i):
 			min_residuals = residuals
@@ -124,7 +124,7 @@ def extract_rrls(spec_list, species, z, rrl_window_size = 1000 * u.km/u.s, rrl_m
 																	 max_order)
 			mask = center_mask(window["Velocity"], rrl_mask_width)
 			#print("Mask:", mask)
-			#print("Residuals:",residuals.unmasked)
+			#print("Residuals:",residuals.mask)
 			#print("Flux:",window["Flux"])
 			# Mask RRL channels for determining RMS and ~mask for the signal
 			residuals_rrl_mask = residuals[mask]
