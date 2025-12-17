@@ -23,13 +23,13 @@ def subtract_baseline(window, rrl_mask_width = 100 * u.km/u.s, order = 1):
 	poly_init = models.Polynomial1D(degree=order)
 	fitter = fitting.LinearLSQFitter(calc_uncertainties=True)
 	pfit = fitter(poly_init, vel[mask], flux[mask])
-	print("Vel Masked:", len(pfit(vel[mask])))
-	residuals = flux - pfit(vel)
-	print("Residual Type:", type(residuals))
+	residuals = flux - pfit(vel) # residual type is MaskedQuantity
+	#print("Vel Masked:", len(pfit(vel[mask])))
+	
 	return residuals
 
 def minimize_order_baseline(rrl_window, rrl_mask_width = 100 * u.km/u.s, max_order = 1):
-	print("Processing RRL#", rrl_window.meta["RRL Number"])
+	print("Processing RRL n =", rrl_window.meta["RRL Number"])
 	residuals0 = subtract_baseline(rrl_window, rrl_mask_width, 0)
 	min_residuals = residuals0
 	min_rchi = rchi(residuals0, 0)
@@ -38,8 +38,8 @@ def minimize_order_baseline(rrl_window, rrl_mask_width = 100 * u.km/u.s, max_ord
 	for order in range(1, max_order+1):
 		residuals = subtract_baseline(rrl_window, rrl_mask_width, order)
 		rchi_i = rchi(residuals, order)
-		print("Temp Residual", residuals)
-		if rchi_i < min_rchi:
+		
+		if abs(1 - min_rchi) > abs(1 - rchi_i):
 			min_residuals = residuals
 			min_order = order
 			min_rchi = rchi_i
@@ -70,30 +70,21 @@ def extract_rrl(freq, flux, species, z, rrl_window_size = 1000 * u.km/u.s):
 	rrl_windows = []
 	#print("f found:", f_array)
 	for n, f in zip(n_array, f_array):
-		print("Found RRL #",int(n))
+		print("Found RRL n =",int(n))
 		freq_to_vel = u.doppler_relativistic(f)
 		vel = freq.to(u.km / u.s, equivalencies = freq_to_vel)
 		#print("Vel:", vel)
 		# Find the indices of the range ends.
 		# This works bc the center 0 km/s are RRLs
-		#print("Window size:", rrl_window_size)
-		#print("Input low:", abs(vel - rrl_window_size/2))
-		#print("Input high:", abs(vel + rrl_window_size/2))
-		#print("Low:", np.min(abs(vel - rrl_window_size/2)))
-		#print("High:", np.min(abs(vel + rrl_window_size/2)))
 		idx_low = abs(vel - rrl_window_size/2).argmin()# argmin is used because they are shifting vel
 		idx_hgh = abs(vel + rrl_window_size/2).argmin()
 		idx_low, idx_hgh = np.sort([idx_low, idx_hgh]) # certain that  idx low to high
-		#print("idx_low:", idx_low)
-		#print("idx_high:", idx_hgh)
 		idx_hgh += 1 # Python excludes the upper end of the range.
 
 		rrl_window_frq = freq[idx_low:idx_hgh]
 		rrl_window_vel = vel[idx_low:idx_hgh]
 		rrl_window_flx = flux[idx_low:idx_hgh]
-		#print(rrl_window_frq)
-		#print(rrl_window_vel)
-		#print(rrl_window_flx)
+		
 		rrl_window = table.QTable([rrl_window_frq, rrl_window_vel, rrl_window_flx], 
 								  masked=True,
 								  names=["Frequency", "Velocity", "Flux"],
@@ -116,10 +107,9 @@ def extract_rrls(spec_list, species, z, rrl_window_size = 1000 * u.km/u.s, rrl_m
 	"""
 	print("Number of Windows:", len(spec_list))
 	rrl_spec_list = []
-	stat_list = []
 	
 	for i, spec in enumerate(spec_list):
-		print("Processing Spec #",i+1)
+		print("Processing Subband #",i+1)
 		#print(np.shape(spec))
 		rrl_windows = extract_rrl(spec["frequency"], 
 						   		 spec["flux"], 
@@ -128,14 +118,14 @@ def extract_rrls(spec_list, species, z, rrl_window_size = 1000 * u.km/u.s, rrl_m
 								 rrl_window_size)
 		
 		for window in rrl_windows:
-			print(np.shape(window))
+			#print(np.shape(window))
 			residuals, min_order, min_rchi = minimize_order_baseline(window,
 																	 rrl_mask_width, 
 																	 max_order)
 			mask = center_mask(window["Velocity"], rrl_mask_width)
-			print("Mask:", mask)
-			print("Residuals:",residuals)
-			print("Flux:",window["Flux"])
+			#print("Mask:", mask)
+			#print("Residuals:",residuals.unmasked)
+			#print("Flux:",window["Flux"])
 			# Mask RRL channels for determining RMS and ~mask for the signal
 			residuals_rrl_mask = residuals[mask]
 			rms = residuals_rrl_mask.std()
@@ -148,5 +138,8 @@ def extract_rrls(spec_list, species, z, rrl_window_size = 1000 * u.km/u.s, rrl_m
 								"Signal":signal})
 
 			rrl_spec_list.append(window)
+
+		print("Finished Subband #", i+1)
+		print("\n")
 
 	return rrl_spec_list
