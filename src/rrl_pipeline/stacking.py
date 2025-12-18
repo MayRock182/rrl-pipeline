@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.interpolate import interp1d
-from utils import center_mask
+from rrl_pipeline.utils import center_mask
+
+# TODO eventually need to find a way to I THINK weigh channels that are more often averaged than others
 
 def stack_rrls(rrl_list, rrl_window_size=1000, rrl_mask_width=100, weighted = False, weights=None):
     """
@@ -8,8 +10,13 @@ def stack_rrls(rrl_list, rrl_window_size=1000, rrl_mask_width=100, weighted = Fa
 
     Return the stacked spectrum.
     """
-    chan_size = np.max(np.abs(np.diff(rrl_list[:,:,0])))
-    interp_chan = np.arange(-rrl_window_size/2., rrl_window_size/2., chan_size)
+    largest_chan = 0 
+    for spec in rrl_list:
+        chan = np.max(np.abs(np.diff(spec["Velocity"])))
+        if chan > largest_chan:
+            largest_chan = chan
+
+    interp_chan = np.arange(-rrl_window_size/2., rrl_window_size/2., largest_chan)
     stack_flx = np.zeros(len(flux_interp), weighted)
     signal_stacks = []
     rms_curve = []
@@ -33,4 +40,4 @@ def stack_rrls(rrl_list, rrl_window_size=1000, rrl_mask_width=100, weighted = Fa
 
     final_stack = stack_flx/divisor
 
-    return interp_chan, final_stack, rms_curve, signal_stacks
+    return final_stack, rms_curve, signal_stacks
